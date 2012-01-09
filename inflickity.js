@@ -2,8 +2,9 @@
 
 var defaults = {
   clones: 1,
-  decay: 0.07,
-  frameInterval: 17
+  decay: 0.03,
+  frameInterval: 17,
+  maxContactPoints: 3
 };
 
 // hello
@@ -23,8 +24,6 @@ function Inflickity( elem, options ) {
     this.options[ prop ] = options[ prop ] || defaults[ prop ];
   }
   
-  console.log( this.options );
-  
   this.element.addEventListener( 'mousedown', this, false );
   
   this.element.style.position = 'relative';
@@ -38,11 +37,79 @@ function Inflickity( elem, options ) {
   
   console.log( this)
   
+  // keep track of mouse moves, mouse touches, etc
+  this.contactPoints = [];
   // this.cloneContents();
   
 }
 
+// -------------------------- methods -------------------------- //
 
+Inflickity.prototype.setPosition = function( x, y ) {
+
+  this.x = x % this.contentWidth;
+  this.y = y;
+
+  var sign = this.x > 0 ? -1 : 1;
+
+  var cloneX = this.x + this.contentWidth * sign;
+
+  this.content.style.webkitTransform = 'translate3d(' + this.x +'px, 0, 0 )';
+  this.contentClone.style.webkitTransform = 'translate3d(' + cloneX +'px, 0px, 0 )';
+
+};
+
+Inflickity.prototype.pushContactPoint = function( event ) {
+
+  var contactPoints = this.contactPoints;
+
+  // remove oldest one if array has 3 items
+  if ( contactPoints.length > this.options.maxContactPoints - 1 )  {
+    contactPoints.shift();
+  }
+
+  contactPoints.push( event );
+
+};
+
+Inflickity.prototype.release = function() {
+
+  var contactPoints = this.contactPoints;
+  var len = contactPoints.length;
+  var lastContactPoint = contactPoints[ len - 1 ];
+  var firstContactPoint = contactPoints[0];
+  // get average time between first and last contact point
+  var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
+  var avgX = ( lastContactPoint.pageX - firstContactPoint.pageX ) / len;
+
+  this.velocityX = ( this.options.frameInterval / avgTime ) * avgX;
+
+  this.animationInterval = setInterval( function( _this ) {
+    _this.tick();
+  }, this.options.frameInterval, this )
+
+};
+
+Inflickity.prototype.tick = function() {
+  console.log('tick')
+  this.setPosition( this.x + this.velocityX );
+  // decay velocity
+  this.velocityX *= 1 - this.options.decay;
+
+  // if velocity is pretty darn slow, stop it
+  if ( Math.abs( this.velocityX ) < 0.5 ) {
+    this.resetInterval();
+  }
+
+};
+
+Inflickity.prototype.resetInterval = function() {
+  if ( this.animationInterval ) {
+    clearInterval( this.animationInterval );
+  }
+};
+
+// -------------------------- event handling -------------------------- //
 
 Inflickity.prototype.handleEvent = function( event ) {
 
@@ -56,12 +123,15 @@ Inflickity.prototype.handleEvent = function( event ) {
 Inflickity.prototype.handlemousedown = function( event ) {
 
   this.originPoint = {
-    x: event.pageX,
-    y: event.pageY
+    x: this.x - event.pageX,
+    y: this.y - event.pageY
   };
 
   window.addEventListener( 'mousemove', this, false );
   window.addEventListener( 'mouseup', this, false );
+
+  this.resetInterval();
+  this.pushContactPoint( event );
 
   event.preventDefault();
 
@@ -69,25 +139,24 @@ Inflickity.prototype.handlemousedown = function( event ) {
 
 Inflickity.prototype.handlemousemove = function( event ) {
 
-  this.deltaX = this.originPoint.x - event.pageX;
+  var x = this.originPoint.x + event.pageX;
+  this.setPosition( x, 0 );
 
-  var moveXA = ( this.x - this.deltaX ) % this.contentWidth
-  var moveXB = moveXA + this.contentWidth;
-  
-  this.content.style.webkitTransform = 'translate3d(' + moveXA +'px, 0, 0 )';
-  this.contentClone.style.webkitTransform = 'translate3d(' + (moveXB) +'px, 0px, 0 )';
-
-  console.log('mousemove', moveXA )
+  this.pushContactPoint( event );
 
 };
 
 Inflickity.prototype.handlemouseup = function( event ) {
-  console.log('mouse up');
-  
-  this.x -= this.deltaX % this.contentWidth;
+  // console.log('mouse up', this.contactPoints );
   
   window.removeEventListener( 'mousemove', this, false );
   window.removeEventListener( 'mouseup', this, false );
+
+  this.pushContactPoint( event );
+  this.release();
+
+  // reset contact points
+  this.contactPoints = [];
 
 };
 
