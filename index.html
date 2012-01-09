@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+
+  <!-- disable zooming -->
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=0" />
+
+  <title>Inflickity</title>
+
+<style>
+
+.cats {
+  list-style: none;
+  width: 2400px;
+  margin: 0;
+  padding: 0;
+}
+
+.cats li {
+  float: left;
+  width: 240px;
+  height: 200px;
+  overflow: hidden;
+}
+
+img {
+  display: block;
+}
+
+#slider {
+  width: 100%;
+  height: 240px;
+  
+}
+
+.cats li:nth-child(5n+0) { background: black; }
+.cats li:nth-child(5n+1) { background: blue; }
+.cats li:nth-child(5n+2) { background: green; }
+.cats li:nth-child(5n+3) { background: orange; }
+.cats li:nth-child(5n+4) { background: red; }
+
+.inflickity-clone li {
+  border-radius: 10px;
+}
+
+</style>
+
+</head>
+<body>
+
+<div id="frame">
+  <div id="slider">
+    <ul id="cats" class="cats">
+      <li><img src="http://placekitten.com/240/200/" /></li>
+      <li><img src="http://placekitten.com/241/200/" /></li>
+      <li><img src="http://placekitten.com/242/200/" /></li>
+      <li><img src="http://placekitten.com/243/200/" /></li>
+      <li><img src="http://placekitten.com/244/200/" /></li>
+      <li><img src="http://placekitten.com/245/200/" /></li>
+      <li><img src="http://placekitten.com/246/200/" /></li>
+      <li><img src="http://placekitten.com/247/200/" /></li>
+      <li><img src="http://placekitten.com/248/200/" /></li>
+      <li><img src="http://placekitten.com/249/200/" /></li>
+    </ul>
+  </div>
+</div>
+
+
+<script src="inflickity.js"></script>
+<script>
+
+
+window.onload = function() {
+  
+  var slider = document.getElementById('slider');
+  var cats = document.getElementById('cats');
+  
+  var myFlick = new Inflickity( slider, cats, {
+    clones: 2
+  });
+  
+  window.myFlick = myFlick
+  
+};
+
+
+
+
+</script>
+
+
+</body>
+</html>
