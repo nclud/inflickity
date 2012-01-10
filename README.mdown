@@ -1,0 +1,12 @@
+# Inflickity
+
+Flick and swipe forever.
+
+``` javascript
+
+var myFlickity = new Inflickity( elem, {
+  // options..
+});
+
+```
+
