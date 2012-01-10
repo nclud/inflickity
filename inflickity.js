@@ -40,6 +40,7 @@ function Inflickity( elem, options ) {
   
   this.x = 0;
   this.y = 0;
+  this.offset = 0;
   this.contentWidth = this.content.offsetWidth;
   
   console.log( this)
@@ -65,7 +66,7 @@ Inflickity.prototype.scrollTo = function( offset ) {
 
 };
 
-Inflickity.prototype.pushContactPoint = function( cursor, timeStamp ) {
+Inflickity.prototype.pushContactPoint = function( offset, timeStamp ) {
 
   var contactPoints = this.contactPoints;
 
@@ -75,8 +76,7 @@ Inflickity.prototype.pushContactPoint = function( cursor, timeStamp ) {
   }
 
   this.contactPoints.push({
-    x: cursor.pageX,
-    y: cursor.pageY,
+    'offset': offset,
     'timeStamp': timeStamp
   });
 
@@ -90,9 +90,9 @@ Inflickity.prototype.release = function() {
   var firstContactPoint = contactPoints[0];
   // get average time between first and last contact point
   var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
-  var avgX = ( lastContactPoint.x - firstContactPoint.x ) / len;
+  var avgOffset = ( lastContactPoint.offset - firstContactPoint.offset ) / len;
 
-  this.velocity = ( this.options.frameInterval / avgTime ) * avgX;
+  this.velocity = ( this.options.frameInterval / avgTime ) * avgOffset;
 
   this.animationInterval = setInterval( function( _this ) {
     _this.tick();
@@ -118,6 +118,18 @@ Inflickity.prototype.resetInterval = function() {
     clearInterval( this.animationInterval );
   }
 };
+
+Inflickity.prototype.getCursorOffset = function( cursor ) {
+  var dx = cursor.pageX - this.originPoint.x;
+  var dy = cursor.pageY - this.originPoint.y;
+  // distance of cursor from origin point
+  var cursorDistance = Math.sqrt( dx * dx + dy * dy );
+  // angle of cursor from origin point
+  var cursorAngle = Math.atan2( dy, dx );
+  var relativeAngle = Math.abs( cursorAngle - this.options.offsetAngle );
+  var offset = cursorDistance * Math.cos( relativeAngle );
+  return offset;
+}
 
 // -------------------------- event handling -------------------------- //
 
@@ -158,11 +170,14 @@ Inflickity.prototype.cursorStart = function( cursor, event ) {
     y: cursor.pageY
   };
 
+  this.offsetOrigin = this.offset;
+
   window.addEventListener( cursorMoveEvent, this, false );
   window.addEventListener( cursorEndEvent, this, false );
 
   this.resetInterval();
-  this.pushContactPoint( cursor, event.timeStamp );
+  var offset = this.getCursorOffset( cursor );
+  this.pushContactPoint( offset, event.timeStamp );
 
   event.preventDefault();
 
@@ -188,20 +203,13 @@ Inflickity.prototype.handletouchmove = function( event ) {
 
 Inflickity.prototype.cursorMove = function( cursor, event ) {
 
-  var dx = cursor.x - this.originPoint.x;
-  var dy = cursor.y - this.originPoint.y;
-  // distance of cursor from origin point
-  var cursorDistance = Math.sqrt( dx * dx + dy * dy );
-  // angle of cursor from origin point
-  var cursorAngle = Math.atan2( dy, dx );
-  var relativeAngle = Math.abs( cursorAngle - this.options.offsetAngle );
-  var offset = cursorDistance * Math.cos( relativeAngle );
+  var offset = this.getCursorOffset( cursor );
 
   // var d = this.originPoint.x + cursor.pageX;
-  this.scrollTo( offset );
+  this.scrollTo( this.offsetOrigin + offset );
 
   // console.log( event.type + ' ' + cursor.pageX )
-  this.pushContactPoint( cursor, event.timeStamp );
+  this.pushContactPoint( offset, event.timeStamp );
 };
 
 Inflickity.prototype.handlemouseup = function( event ) {
@@ -228,7 +236,8 @@ Inflickity.prototype.cursorEnd = function( cursor, event ) {
   window.removeEventListener( cursorMoveEvent, this, false );
   window.removeEventListener( cursorEndEvent, this, false );
 
-  this.pushContactPoint( cursor, event.timeStamp );
+  var offset = this.getCursorOffset( cursor );
+  this.pushContactPoint( offset, event.timeStamp );
   this.release();
 
   // reset contact points
