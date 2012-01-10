@@ -5,6 +5,8 @@ var isTouch = 'createTouch' in document;
 var cursorStartEvent = isTouch ? 'touchstart' : 'mousedown';
 var cursorMoveEvent = isTouch ? 'touchmove' : 'mousemove';
 var cursorEndEvent = isTouch ? 'touchend' : 'mouseup';
+var Modernizr = window.Modernizr;
+var transformProp = Modernizr.prefixed('transform');
 
 var defaults = {
   clones: 1,
@@ -42,6 +44,9 @@ function Inflickity( elem, options ) {
   this.y = 0;
   this.offset = 0;
   this.contentWidth = this.content.offsetWidth;
+  if ( this.options.offsetAngle ) {
+    this.element.style[ transformProp ] = 'rotate(' +this.options.offsetAngle + 'rad)';
+  }
   
   console.log( this)
   
@@ -58,13 +63,23 @@ Inflickity.prototype.scrollTo = function( offset ) {
   this.offset = offset % this.contentWidth;
 
   var sign = this.offset > 0 ? -1 : 1;
-
   var cloneOffset = this.offset + this.contentWidth * sign;
 
-  this.content.style.webkitTransform = 'translate3d(' + this.offset +'px, 0, 0 )';
-  this.contentClone.style.webkitTransform = 'translate3d(' + cloneOffset +'px, 0px, 0 )';
+  this.positionElem( this.content, this.offset, 0 );
+  this.positionElem( this.contentClone, cloneOffset, 0 );
 
 };
+
+Inflickity.prototype.positionElem = Modernizr.csstransforms3d ? function( elem, x, y ) {
+    elem.style[ transformProp ] = 'translate3d( ' + x + 'px, ' + y + 'px, 0)';
+  } :
+  Modernizr.csstransforms ? function( elem, x, y ) {
+    elem.style[ transformProp ] = 'translate( ' + x + 'px, ' + y + 'px)';
+  } :
+  function( elem, x, y ) {
+    elem.style.left = x + 'px';
+    elem.style.top = y + 'px';
+  };
 
 Inflickity.prototype.pushContactPoint = function( offset, timeStamp ) {
 

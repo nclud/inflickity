@@ -45,7 +45,7 @@ img {
 }
 
 #slider2 {
-  -webkit-transform: rotate(-60deg);
+/*  -webkit-transform: translate( 0, -200px ) rotate(-60deg);*/
 }
 
 </style>
@@ -84,6 +84,7 @@ img {
 </div>
 
 
+<script src="modernizr.js"></script>
 <script src="inflickity.js"></script>
 <script>
 
@@ -98,7 +99,7 @@ var init = function() {
   });
   
   var myDutchFlick = new Inflickity( slider2, {
-    offsetAngle: -Math.PI / 3
+    offsetAngle: -Math.PI / 6
   })
   
   window.myFlick = myFlick
