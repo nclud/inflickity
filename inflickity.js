@@ -1,5 +1,11 @@
 (function( window ){
 
+var document = window.document;
+var isTouch = 'createTouch' in document;
+var cursorStartEvent = isTouch ? 'touchstart' : 'mousedown';
+var cursorMoveEvent = isTouch ? 'touchmove' : 'mousemove';
+var cursorEndEvent = isTouch ? 'touchend' : 'mouseup';
+
 var defaults = {
   clones: 1,
   decay: 0.03,
@@ -21,10 +27,10 @@ function Inflickity( elem, options ) {
   // set options
   this.options = {};
   for ( var prop in defaults ) {
-    this.options[ prop ] = options[ prop ] || defaults[ prop ];
+    this.options[ prop ] = options.hasOwnProperty( prop ) ? options[ prop ] : defaults[ prop ];
   }
   
-  this.element.addEventListener( 'mousedown', this, false );
+  this.element.addEventListener( cursorStartEvent, this, false );
   
   this.element.style.position = 'relative';
   this.content.style.position = 'absolute';
@@ -59,16 +65,20 @@ Inflickity.prototype.setPosition = function( x, y ) {
 
 };
 
-Inflickity.prototype.pushContactPoint = function( event ) {
+Inflickity.prototype.pushContactPoint = function( cursor, timeStamp ) {
 
   var contactPoints = this.contactPoints;
 
   // remove oldest one if array has 3 items
-  if ( contactPoints.length > this.options.maxContactPoints - 1 )  {
-    contactPoints.shift();
+  if ( this.contactPoints.length > this.options.maxContactPoints - 1 )  {
+    this.contactPoints.shift();
   }
 
-  contactPoints.push( event );
+  this.contactPoints.push({
+    x: cursor.pageX,
+    y: cursor.pageY,
+    'timeStamp': timeStamp
+  });
 
 };
 
@@ -80,7 +90,7 @@ Inflickity.prototype.release = function() {
   var firstContactPoint = contactPoints[0];
   // get average time between first and last contact point
   var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
-  var avgX = ( lastContactPoint.pageX - firstContactPoint.pageX ) / len;
+  var avgX = ( lastContactPoint.x - firstContactPoint.x ) / len;
 
   this.velocityX = ( this.options.frameInterval / avgTime ) * avgX;
 
@@ -91,7 +101,7 @@ Inflickity.prototype.release = function() {
 };
 
 Inflickity.prototype.tick = function() {
-  console.log('tick')
+  // console.log('tick')
   this.setPosition( this.x + this.velocityX );
   // decay velocity
   this.velocityX *= 1 - this.options.decay;
@@ -121,42 +131,99 @@ Inflickity.prototype.handleEvent = function( event ) {
 };
 
 Inflickity.prototype.handlemousedown = function( event ) {
+  this.cursorStart( event, event )
+};
+
+Inflickity.prototype.handletouchstart = function( event ) {
+  // disregard additional touches
+  if ( this.cursorIdentifier ) {
+    return;
+  }
+
+  this.cursorStart( event.changedTouches[0], event );
+};
+
+Inflickity.prototype.cursorStart = function( cursor, event ) {
+
+  var message = '';
+  for ( var prop in cursor ) {
+    message += ' ' + prop;
+  }
+  // console.log( message )
+
+  this.cursorIdentifier = cursor.identifier || 1;
 
   this.originPoint = {
-    x: this.x - event.pageX,
-    y: this.y - event.pageY
+    x: this.x - cursor.pageX,
+    y: this.y - cursor.pageY
   };
 
-  window.addEventListener( 'mousemove', this, false );
-  window.addEventListener( 'mouseup', this, false );
+  window.addEventListener( cursorMoveEvent, this, false );
+  window.addEventListener( cursorEndEvent, this, false );
 
   this.resetInterval();
-  this.pushContactPoint( event );
+  this.pushContactPoint( cursor, event.timeStamp );
 
   event.preventDefault();
 
 };
 
-Inflickity.prototype.handlemousemove = function( event ) {
 
-  var x = this.originPoint.x + event.pageX;
+Inflickity.prototype.handlemousemove = function( event ) {
+  this.cursorMove( event, event );
+};
+
+Inflickity.prototype.handletouchmove = function( event ) {
+  var touch;
+  for (var i=0, len = event.changedTouches.length; i < len; i++) {
+    touch = event.changedTouches[i];
+    if ( touch.identifier === this.cursorIdentifier ) {
+      this.cursorMove( touch, event );
+      break;
+    }
+  }
+};
+
+
+Inflickity.prototype.cursorMove = function( cursor, event ) {
+  var x = this.originPoint.x + cursor.pageX;
   this.setPosition( x, 0 );
 
-  this.pushContactPoint( event );
-
+  // console.log( event.type + ' ' + cursor.pageX )
+  this.pushContactPoint( cursor, event.timeStamp );
 };
 
 Inflickity.prototype.handlemouseup = function( event ) {
   // console.log('mouse up', this.contactPoints );
-  
-  window.removeEventListener( 'mousemove', this, false );
-  window.removeEventListener( 'mouseup', this, false );
+  this.cursorEnd( event, event );
 
-  this.pushContactPoint( event );
+};
+
+Inflickity.prototype.handletouchend = function( event ) {
+  var touch;
+  for (var i=0, len = event.changedTouches.length; i < len; i++) {
+    touch = event.changedTouches[i];
+    if ( touch.identifier === this.cursorIdentifier ) {
+      this.cursorEnd( touch, event );
+      break;
+    }
+  }
+
+};
+
+
+Inflickity.prototype.cursorEnd = function( cursor, event ) {
+
+  window.removeEventListener( cursorMoveEvent, this, false );
+  window.removeEventListener( cursorEndEvent, this, false );
+
+  this.pushContactPoint( cursor, event.timeStamp );
   this.release();
 
   // reset contact points
   this.contactPoints = [];
+  // reset cursor identifier
+  delete this.cursorIdentifier;
 
 };
 
