@@ -10,7 +10,8 @@ var defaults = {
   clones: 1,
   decay: 0.03,
   frameInterval: 17,
-  maxContactPoints: 3
+  maxContactPoints: 3,
+  offsetAngle: 0
 };
 
 // hello
@@ -51,17 +52,16 @@ function Inflickity( elem, options ) {
 
 // -------------------------- methods -------------------------- //
 
-Inflickity.prototype.setPosition = function( x, y ) {
+Inflickity.prototype.scrollTo = function( offset ) {
 
-  this.x = x % this.contentWidth;
-  this.y = y;
+  this.offset = offset % this.contentWidth;
 
-  var sign = this.x > 0 ? -1 : 1;
+  var sign = this.offset > 0 ? -1 : 1;
 
-  var cloneX = this.x + this.contentWidth * sign;
+  var cloneOffset = this.offset + this.contentWidth * sign;
 
-  this.content.style.webkitTransform = 'translate3d(' + this.x +'px, 0, 0 )';
-  this.contentClone.style.webkitTransform = 'translate3d(' + cloneX +'px, 0px, 0 )';
+  this.content.style.webkitTransform = 'translate3d(' + this.offset +'px, 0, 0 )';
+  this.contentClone.style.webkitTransform = 'translate3d(' + cloneOffset +'px, 0px, 0 )';
 
 };
 
@@ -92,7 +92,7 @@ Inflickity.prototype.release = function() {
   var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
   var avgX = ( lastContactPoint.x - firstContactPoint.x ) / len;
 
-  this.velocityX = ( this.options.frameInterval / avgTime ) * avgX;
+  this.velocity = ( this.options.frameInterval / avgTime ) * avgX;
 
   this.animationInterval = setInterval( function( _this ) {
     _this.tick();
@@ -102,12 +102,12 @@ Inflickity.prototype.release = function() {
 
 Inflickity.prototype.tick = function() {
   // console.log('tick')
-  this.setPosition( this.x + this.velocityX );
+  this.scrollTo( this.offset + this.velocity );
   // decay velocity
-  this.velocityX *= 1 - this.options.decay;
+  this.velocity *= 1 - this.options.decay;
 
   // if velocity is pretty darn slow, stop it
-  if ( Math.abs( this.velocityX ) < 0.5 ) {
+  if ( Math.abs( this.velocity ) < 0.5 ) {
     this.resetInterval();
   }
 
@@ -154,8 +154,8 @@ Inflickity.prototype.cursorStart = function( cursor, event ) {
   this.cursorIdentifier = cursor.identifier || 1;
 
   this.originPoint = {
-    x: this.x - cursor.pageX,
-    y: this.y - cursor.pageY
+    x: cursor.pageX,
+    y: cursor.pageY
   };
 
   window.addEventListener( cursorMoveEvent, this, false );
@@ -184,10 +184,21 @@ Inflickity.prototype.handletouchmove = function( event ) {
   }
 };
 
+// Inflickity.prototype.getDistance
 
 Inflickity.prototype.cursorMove = function( cursor, event ) {
-  var x = this.originPoint.x + cursor.pageX;
-  this.setPosition( x, 0 );
+
+  var dx = cursor.x - this.originPoint.x;
+  var dy = cursor.y - this.originPoint.y;
+  // distance of cursor from origin point
+  var cursorDistance = Math.sqrt( dx * dx + dy * dy );
+  // angle of cursor from origin point
+  var cursorAngle = Math.atan2( dy, dx );
+  var relativeAngle = Math.abs( cursorAngle - this.options.offsetAngle );
+  var offset = cursorDistance * Math.cos( relativeAngle );
+
+  // var d = this.originPoint.x + cursor.pageX;
+  this.scrollTo( offset );
 
   // console.log( event.type + ' ' + cursor.pageX )
   this.pushContactPoint( cursor, event.timeStamp );

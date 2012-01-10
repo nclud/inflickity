@@ -21,12 +21,12 @@
 <body>
 
   <h1>get-dutch-distance</h1>
-  <p id="directions">Set origin point</p>
+  <p id="directions"></p>
   <canvas></canvas>
 
 <script>
 
-var canvas, xo, yo, cursor, ctx, offsetAngle;
+var canvas, xo, yo, cursor, ctx, offsetAngle, directions;
 var w = 800;
 var h = 600;
 var clickI = 0;
@@ -66,6 +66,8 @@ function renderAngle( angle, x, y, color ) {
   ctx.lineTo(  w * Math.cos( angle ) + x,  w * Math.sin( angle )  + y );
   
   ctx.stroke();
+  
+  directions.innerText = 'set offset angle';
 }
 
 function click1( x, y ) {
@@ -80,6 +82,9 @@ function click1( x, y ) {
   ctx.beginPath();
     ctx.arc( xo, yo, 20, 0, offsetAngle );
     ctx.stroke();
+
+
+  directions.innerText = 'set cursor';
 
 }
 
@@ -116,14 +121,16 @@ function click2( x, y ) {
 
   var d2 = d1 * Math.cos( a2 );
 
-  
+  // render circle measuring the distance
   ctx.strokeStyle = 'black';
   ctx.beginPath();
   ctx.arc( xo, yo, d2, 0, Math.PI * 2 );
   ctx.stroke();
   ctx.restore();
   
-  
+
+
+  directions.innerText = 'Click again to set origin point';  
   // var b = x * Math.tan( offsetAngle - Math.PI / 2 ) - y;
   
 
@@ -146,6 +153,8 @@ function handleClick( event ) {
 }
 
 function init() {
+  directions = document.getElementById('directions');
+  directions.innerText = 'set origin point';
   canvas = document.getElementsByTagName('canvas')[0];
   canvas.width = w;
   canvas.height = h;
