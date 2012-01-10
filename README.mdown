@@ -10,3 +10,11 @@ var myFlickity = new Inflickity( elem, {
 
 ```
 
+Requires [Modernizr](http://www.modernizr.com/download/#-csstransforms-csstransforms3d-prefixed-teststyles-testprop-testallprops-prefixes-domprefixes) with the following options:
+
++ CSS 2D Transforms
++ CSS 3D Transforms
++ Modernizr.prefixed()
+
+## Options
+
