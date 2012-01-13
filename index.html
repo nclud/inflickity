@@ -92,6 +92,7 @@ img {
 var init = function() {
   
   var slider1 = document.getElementById('slider1');
+  var slider2 = document.getElementById('slider2');
   var cats = document.getElementById('cats');
   
   var myFlick = new Inflickity( slider1, {
@@ -99,7 +100,7 @@ var init = function() {
   });
   
   var myDutchFlick = new Inflickity( slider2, {
-    offsetAngle: -Math.PI / 6
+    offsetAngle: -Math.PI / 3
   })
   
   window.myFlick = myFlick
