@@ -14,8 +14,8 @@ function getNow() {
 
 var defaults = {
   clones: 1,
-  decay: 0.03,
-  frameInterval: 17,
+  friction: 0.03,
+  animationInterval: 17,
   maxContactPoints: 3,
   offsetAngle: 0,
   onClick: undefined,
@@ -110,46 +110,6 @@ Inflickity.prototype.pushContactPoint = function( offset, timeStamp ) {
 
 };
 
-Inflickity.prototype.release = function() {
-
-  var contactPoints = this.contactPoints;
-  var len = contactPoints.length;
-  var lastContactPoint = contactPoints[ len - 1 ];
-  var firstContactPoint = contactPoints[0];
-  // get average time between first and last contact point
-  var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
-  var avgOffset = ( lastContactPoint.offset - firstContactPoint.offset ) / len;
-
-  this.velocity = ( this.options.frameInterval / avgTime ) * avgOffset;
-
-  this.isScrolling = true;
-
-  this.animationInterval = setInterval( function( _this ) {
-    _this.releaseTick();
-  }, this.options.frameInterval, this )
-
-};
-
-Inflickity.prototype.releaseTick = function() {
-  // console.log('tick')
-  this.setOffset( this.offset + this.velocity );
-  // decay velocity
-  this.velocity *= 1 - this.options.decay;
-
-  // if velocity is pretty darn slow, stop it
-  if ( Math.abs( this.velocity ) < 0.5 ) {
-    this.stopScrolling();
-  }
-
-};
-
-Inflickity.prototype.stopScrolling = function() {
-  this.isScrolling = false;
-  if ( this.animationInterval ) {
-    clearInterval( this.animationInterval );
-  }
-};
-
 Inflickity.prototype.getCursorOffset = function( cursor ) {
   var dx = cursor.pageX - this.originPoint.x;
   var dy = cursor.pageY - this.originPoint.y;
@@ -200,7 +160,7 @@ Inflickity.prototype.cursorStart = function( cursor, event ) {
   window.addEventListener( cursorMoveEvent, this, false );
   window.addEventListener( cursorEndEvent, this, false );
 
-  this.stopScrolling();
+  this.stopAnimation();
   var offset = this.getCursorOffset( cursor );
   this.pushContactPoint( offset, event.timeStamp );
 
@@ -294,28 +254,53 @@ Inflickity.prototype.cursorEnd = function( cursor, event ) {
 
 // -------------------------- animation -------------------------- //
 
-Inflickity.prototype.scrollTo = function( destinationOffset, duration ) {
-  this.animate( this.offset, -destinationOffset )
+// after cursorEnd event, allow inertial scrolling
+Inflickity.prototype.release = function() {
+
+  var contactPoints = this.contactPoints;
+  var len = contactPoints.length;
+  var lastContactPoint = contactPoints[ len - 1 ];
+  var firstContactPoint = contactPoints[0];
+  // get average time between first and last contact point
+  var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
+  var avgOffset = ( lastContactPoint.offset - firstContactPoint.offset ) / len;
+
+  this.velocity = ( this.options.animationInterval / avgTime ) * avgOffset;
+
+  this.animate({
+    intervalFn: function( _this ) {
+      _this.releaseTick();
+    }
+  });
+
 };
 
-Inflickity.prototype.animate = function( origin, destination, duration ) {
+Inflickity.prototype.releaseTick = function() {
 
-  // stop previous animation
-  this.stopAnimation();
+  this.setOffset( this.offset + this.velocity );
+  // decay velocity
+  this.velocity *= 1 - this.options.friction;
 
-  this.animation = {
-    startTime: getNow(),
-    duration: duration || this.options.animationDuration,
-    origin: origin,
-    diff: destination - origin,
-    interval: setInterval( function( _this ) {
-      _this.animationTick();
-    }, this.options.animationInterval, this )
+  // if velocity is slow enough, stop animation
+  if ( Math.abs( this.velocity ) < 0.5 ) {
+    this.stopAnimation();
   }
 
 };
 
-Inflickity.prototype.animationTick = function() {
+
+Inflickity.prototype.scrollTo = function( destinationOffset, duration ) {
+  this.animate({
+    duration: duration,
+    origin: this.offset,
+    diff: destinationOffset - this.offset,
+    intervalFn: function( _this ) {
+      _this.scrollToTick();
+    }
+  });
+};
+
+Inflickity.prototype.scrollToTick = function() {
   var ani = this.animation;
   var progress = ( getNow() - ani.startTime ) / ani.duration;
 
@@ -327,7 +312,23 @@ Inflickity.prototype.animationTick = function() {
   this.setOffset( offset );
 };
 
+// options should have options.intervalFn,
+// which is the function ran each interval, gets `this` as argument
+Inflickity.prototype.animate = function( animation ) {
+  // stop previous animation
+  this.stopAnimation();
+
+  this.isScrolling = true;
+
+  this.animation = animation;
+  this.animation.startTime = getNow();
+  this.animation.duration = this.animation.duration || this.options.animationDuration;
+  // start interval
+  this.animation.interval = setInterval( animation.intervalFn, this.options.animationInterval, this );
+};
+
 Inflickity.prototype.stopAnimation = function() {
+  this.isScrolling = false;
   if ( this.animation && this.animation.interval ) {
     clearInterval( this.animation.interval );
     delete this.animation;
