@@ -92,7 +92,7 @@ Inflickity.prototype.positionElem = Modernizr.csstransforms3d ? function( elem, 
     elem.style.top = y + 'px';
   };
 
-Inflickity.prototype.pushContactPoint = function( offset, timeStamp ) {
+Inflickity.prototype.pushContactPoint = function( offset ) {
 
   var contactPoints = this.contactPoints;
 
@@ -103,7 +103,7 @@ Inflickity.prototype.pushContactPoint = function( offset, timeStamp ) {
 
   this.contactPoints.push({
     'offset': offset,
-    'timeStamp': timeStamp
+    timeStamp: getNow()
   });
 
 };
@@ -160,7 +160,7 @@ Inflickity.prototype.cursorStart = function( cursor, event ) {
 
   this.stopAnimation();
   var offset = this.getCursorOffset( cursor );
-  this.pushContactPoint( offset, event.timeStamp );
+  this.pushContactPoint( offset );
 
   // reset isDragging flag
   this.isDragging = false;
@@ -194,8 +194,7 @@ Inflickity.prototype.cursorMove = function( cursor, event ) {
   // var d = this.originPoint.x + cursor.pageX;
   this.setOffset( this.offsetOrigin + offset );
 
-  // console.log( event.type + ' ' + cursor.pageX )
-  this.pushContactPoint( offset, event.timeStamp );
+  this.pushContactPoint( offset );
 
   var movedX = Math.abs( cursor.pageX - this.originPoint.x );
   var movedY = Math.abs( cursor.pageY - this.originPoint.y );
@@ -208,9 +207,7 @@ Inflickity.prototype.cursorMove = function( cursor, event ) {
 };
 
 Inflickity.prototype.handlemouseup = function( event ) {
-  // console.log('mouse up', this.contactPoints );
   this.cursorEnd( event, event );
-
 };
 
 Inflickity.prototype.handletouchend = function( event ) {
@@ -232,7 +229,7 @@ Inflickity.prototype.cursorEnd = function( cursor, event ) {
   window.removeEventListener( cursorEndEvent, this, false );
 
   var offset = this.getCursorOffset( cursor );
-  this.pushContactPoint( offset, event.timeStamp );
+  this.pushContactPoint( offset );
   this.release();
 
   // reset contact points
