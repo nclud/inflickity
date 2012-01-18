@@ -72,15 +72,13 @@ function Inflickity( elem, options ) {
 // -------------------------- methods -------------------------- //
 
 Inflickity.prototype.setOffset = function( offset ) {
+  var contentW = this.contentWidth;
 
-  this.offset = offset % this.contentWidth;
-
-  var sign = this.offset > 0 ? -1 : 1;
-  var cloneOffset = this.offset + this.contentWidth * sign;
+  // offset = positive number, between 0 & contentWidth
+  this.offset = ( ( offset % contentW ) + contentW ) % contentW;
 
   this.positionElem( this.content, this.offset, 0 );
-  this.positionElem( this.contentClone, cloneOffset, 0 );
-
+  this.positionElem( this.contentClone, this.offset - contentW, 0 );
 };
 
 Inflickity.prototype.positionElem = Modernizr.csstransforms3d ? function( elem, x, y ) {
@@ -289,11 +287,21 @@ Inflickity.prototype.releaseTick = function() {
 };
 
 
-Inflickity.prototype.scrollTo = function( destinationOffset, duration ) {
+Inflickity.prototype.scrollTo = function( dest, duration ) {
+  var cw = this.contentWidth;
+  dest = ( ( dest % cw ) + cw ) % cw;
+  var diff = dest - this.offset;
+
+  // adjust to closet destination
+  if ( Math.abs( diff ) > cw / 2 ) {
+    var sign = diff > 0 ? -1 : 1;
+    diff = diff + cw * sign;
+  }
+
   this.animate({
     duration: duration,
     origin: this.offset,
-    diff: destinationOffset - this.offset,
+    diff: diff,
     intervalFn: function( _this ) {
       _this.scrollToTick();
     }
