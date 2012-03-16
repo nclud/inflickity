@@ -1,6 +1,16 @@
+/**
+ * Inflickity - never-ending drag n' flick content
+ * requires Modernizr 2.5 and requestAnimationFrame polyfill
+ */
+
+/*jshint asi: false, browser: true, curly: true, eqeqeq: true, forin: false, newcap: true, noempty: true, strict: true, undef: true */
+
 (function( window ){
 
+'use strict';
+
 var document = window.document;
+var requestAnimationFrame = window.requestAnimationFrame;
 var isTouch = 'createTouch' in document;
 var cursorStartEvent = isTouch ? 'touchstart' : 'mousedown';
 var cursorMoveEvent = isTouch ? 'touchmove' : 'mousemove';
@@ -46,8 +56,11 @@ function Inflickity( elem, options ) {
   this.y = 0;
   this.offset = 0;
   this.contentWidth = this.content.offsetWidth;
-  if ( this.options.offsetAngle ) {
-    this.element.style[ transformProp ] = 'rotate(' +this.options.offsetAngle + 'rad)';
+
+  // use offset angle if css transforms are supported
+  this.offsetAngle = Modernizr.csstransforms ? this.options.offsetAngle : 0;
+  if ( this.offsetAngle ) {
+    this.element.style[ transformProp ] = 'rotate(' +this.offsetAngle + 'rad)';
   }
   
   // keep track of mouse moves, mouse touches, etc
@@ -86,7 +99,7 @@ Inflickity.prototype.positionElem = Modernizr.csstransforms3d ? function( elem, 
     elem.style[ transformProp ] = 'translate3d( ' + x + 'px, ' + y + 'px, 0)';
   } :
   Modernizr.csstransforms ? function( elem, x, y ) {
-    elem.style[ transformProp ] = 'translate( ' + x + 'px, ' + y + 'px)';
+    elem.style[ transformProp ] = 'translate(' + x + 'px, ' + y + 'px)';
   } :
   function( elem, x, y ) {
     elem.style.left = x + 'px';
@@ -116,7 +129,7 @@ Inflickity.prototype.getCursorOffset = function( cursor ) {
   var cursorDistance = Math.sqrt( dx * dx + dy * dy );
   // angle of cursor from origin point
   var cursorAngle = Math.atan2( dy, dx );
-  var relativeAngle = Math.abs( cursorAngle - this.options.offsetAngle );
+  var relativeAngle = Math.abs( cursorAngle - this.offsetAngle );
   var offset = cursorDistance * Math.cos( relativeAngle );
   return offset;
 };
@@ -252,34 +265,35 @@ Inflickity.prototype.cursorEnd = function( cursor, event ) {
 
 // after cursorEnd event, allow inertial scrolling
 Inflickity.prototype.release = function() {
-
   var contactPoints = this.contactPoints;
   var len = contactPoints.length;
   var lastContactPoint = contactPoints[ len - 1 ];
   var firstContactPoint = contactPoints[0];
+  // get time diff, at least 1 ms so don't divide by zero
+  var timeDiff = lastContactPoint.timeStamp - firstContactPoint.timeStamp || 1;
   // get average time between first and last contact point
-  var avgTime = ( lastContactPoint.timeStamp - firstContactPoint.timeStamp ) / len;
+  var avgTime = timeDiff / len;
   var avgOffset = ( lastContactPoint.offset - firstContactPoint.offset ) / len;
 
-  this.velocity = ( this.options.animationInterval / avgTime ) * avgOffset;
+  // 60 FPS in requestAnimationFrame
+  this.velocity = ( ( 1000 / 60 ) / avgTime ) * avgOffset;
 
   this.animate({
-    intervalFn: function( _this ) {
-      _this.releaseTick();
-    }
+    frameFn: this.releaseTick
   });
 
 };
 
 Inflickity.prototype.releaseTick = function() {
-
   this.setOffset( this.offset + this.velocity );
   // decay velocity
   this.velocity *= 1 - this.options.friction;
-
   // if velocity is slow enough, stop animation
   if ( Math.abs( this.velocity ) < 0.5 ) {
     this.stopAnimation();
+  } else {
+    // keep on animating
+    this.animationFrameTick();
   }
 
 };
@@ -300,25 +314,26 @@ Inflickity.prototype.scrollTo = function( dest, duration ) {
     duration: duration,
     origin: this.offset,
     diff: diff,
-    intervalFn: function( _this ) {
-      _this.scrollToTick();
-    }
+    frameFn: this.scrollToTick
   });
 };
 
 Inflickity.prototype.scrollToTick = function() {
   var ani = this.animation;
   var progress = ( getNow() - ani.startTime ) / ani.duration;
+  var offset = this.options.easing( progress, null, ani.origin, ani.diff );
+
+  this.setOffset( offset );
 
   if ( progress >= 1 ) {
     this.stopAnimation();
+  } else {
+    // keep on animating
+    this.animationFrameTick();
   }
-
-  var offset = this.options.easing( progress, null, ani.origin, ani.diff )
-  this.setOffset( offset );
 };
 
-// options should have options.intervalFn,
+// options should have options.frameFn,
 // which is the function ran each interval, gets `this` as argument
 Inflickity.prototype.animate = function( animation ) {
   // stop previous animation
@@ -329,14 +344,20 @@ Inflickity.prototype.animate = function( animation ) {
   this.animation = animation;
   this.animation.startTime = getNow();
   this.animation.duration = this.animation.duration || this.options.animationDuration;
-  // start interval
-  this.animation.interval = setInterval( animation.intervalFn, this.options.animationInterval, this );
+  // start animation
+  this.animationFrameTick();
+};
+
+// triggered every animation frame, needed to re-set animation.id
+Inflickity.prototype.animationFrameTick = function() {
+  var animationFrameFn = this.animation.frameFn.bind( this );
+  this.animation.id = window.requestAnimationFrame( animationFrameFn );
 };
 
 Inflickity.prototype.stopAnimation = function() {
   this.isScrolling = false;
-  if ( this.animation && this.animation.interval ) {
-    clearInterval( this.animation.interval );
+  if ( this.animation && isFinite( this.animation.id ) ) {
+    window.cancelAnimationFrame( this.animation.id );
     delete this.animation;
   }
 };
