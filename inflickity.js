@@ -12,20 +12,6 @@ function getNow() {
   return ( new Date() ).getTime();
 }
 
-var defaults = {
-  clones: 1,
-  friction: 0.03,
-  animationInterval: 17,
-  maxContactPoints: 3,
-  offsetAngle: 0,
-  onClick: undefined,
-  animationDuration: 400,
-  // basically jQuery swing
-  easing: function( progress, n, firstNum, diff ) {
-    return ( ( -Math.cos( progress * Math.PI ) / 2 ) + 0.5 ) * diff + firstNum;
-  }
-};
-
 // hello
 function Inflickity( elem, options ) {
   
@@ -42,8 +28,9 @@ function Inflickity( elem, options ) {
   
   // set options
   this.options = {};
-  for ( var prop in defaults ) {
-    this.options[ prop ] = options && options.hasOwnProperty( prop ) ? options[ prop ] : defaults[ prop ];
+  for ( var prop in Inflickity.defaults ) {
+    this.options[ prop ] = options && options.hasOwnProperty( prop ) ?
+      options[ prop ] : Inflickity.defaults[ prop ];
   }
   
   this.element.addEventListener( cursorStartEvent, this, false );
@@ -68,6 +55,20 @@ function Inflickity( elem, options ) {
   // this.cloneContents();
   
 }
+
+Inflickity.defaults = {
+  clones: 1,
+  friction: 0.03,
+  maxContactPoints: 3,
+  offsetAngle: 0,
+  onClick: undefined,
+  animationDuration: 400,
+  // basically jQuery swing
+  easing: function( progress, n, firstNum, diff ) {
+    return ( ( -Math.cos( progress * Math.PI ) / 2 ) + 0.5 ) * diff + firstNum;
+  }
+};
+
 
 // -------------------------- methods -------------------------- //
 
