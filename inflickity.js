@@ -122,6 +122,8 @@ Inflickity.prototype.pushContactPoint = function( offset ) {
 
 };
 
+// since inflickity could be at angle, get the offset with that angle applied
+// http://jsfiddle.net/desandro/2GMYn/
 Inflickity.prototype.getCursorOffset = function( cursor ) {
   var dx = cursor.pageX - this.originPoint.x;
   var dy = cursor.pageY - this.originPoint.y;
@@ -205,7 +207,6 @@ Inflickity.prototype.cursorMove = function( cursor, event ) {
 
   var offset = this.getCursorOffset( cursor );
 
-  // var d = this.originPoint.x + cursor.pageX;
   this.setOffset( this.offsetOrigin + offset );
 
   this.pushContactPoint( offset );
