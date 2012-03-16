@@ -1,5 +1,5 @@
 /**
- * Inflickity v1.0.00
+ * Inflickity v1.0.01
  * Never-ending drag n' flick content
  * https://github.com/nclud/inflickity
  * requires Modernizr 2.5 and requestAnimationFrame polyfill
@@ -7,7 +7,7 @@
 
 /*jshint asi: false, browser: true, curly: true, eqeqeq: true, forin: false, newcap: true, noempty: true, strict: true, undef: true */
 
-(function( window ){
+(function( window, undefined ){
 
 'use strict';
 
@@ -366,4 +366,4 @@ Inflickity.prototype.stopAnimation = function() {
 
 window.Inflickity = Inflickity;
 
-})( window, undefined );
+})( window );
