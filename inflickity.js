@@ -1,5 +1,6 @@
 /**
- * Inflickity - never-ending drag n' flick content
+ * Inflickity v1.0.00
+ * Never-ending drag n' flick content
  * https://github.com/nclud/inflickity
  * requires Modernizr 2.5 and requestAnimationFrame polyfill
  */
