@@ -23,7 +23,7 @@ function Inflickity( elem, options ) {
   if ( this.content.id ) {
     this.contentClone.id = this.content.id + '-inflickity-clone';
   }
-  this.contentClone.className += ' inflickity-clone'
+  this.contentClone.className += ' inflickity-clone';
   this.element.appendChild( this.contentClone );
   
   // set options
@@ -119,7 +119,7 @@ Inflickity.prototype.getCursorOffset = function( cursor ) {
   var relativeAngle = Math.abs( cursorAngle - this.options.offsetAngle );
   var offset = cursorDistance * Math.cos( relativeAngle );
   return offset;
-}
+};
 
 // -------------------------- event handling -------------------------- //
 
@@ -133,7 +133,7 @@ Inflickity.prototype.handleEvent = function( event ) {
 };
 
 Inflickity.prototype.handlemousedown = function( event ) {
-  this.cursorStart( event, event )
+  this.cursorStart( event, event );
 };
 
 Inflickity.prototype.handletouchstart = function( event ) {
