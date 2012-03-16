@@ -2,19 +2,31 @@
 
 Flick and swipe forever.
 
+See demo [nclud.github.com/inflickity](http://nclud.github.com/inflickity)
+
+Custom widget created for [nclud.com v3](http://nclud.com/team).
+
 ``` javascript
-
 var myFlickity = new Inflickity( elem, {
-  // options..
+  // options
+  // you can overwrite these defaults as you like
+  clones: 1,
+  friction: 0.03,
+  maxContactPoints: 3,
+  offsetAngle: 0,
+  onClick: undefined,
+  animationDuration: 400,
+  // basically jQuery swing
+  easing: function( progress, n, firstNum, diff ) {
+    return ( ( -Math.cos( progress * Math.PI ) / 2 ) + 0.5 ) * diff + firstNum;
+  }
 });
-
 ```
 
-Requires [Modernizr](http://www.modernizr.com/download/#-csstransforms-csstransforms3d-prefixed-teststyles-testprop-testallprops-prefixes-domprefixes) with the following options:
+## Requires
 
-+ CSS 2D Transforms
-+ CSS 3D Transforms
-+ Modernizr.prefixed()
-
-## Options
-
++ [requestAnimationFrame polyfill](https://gist.github.com/1866474)
++ [Modernizr](http://www.modernizr.com/download/#-csstransforms-csstransforms3d-prefixed-teststyles-testprop-testallprops-prefixes-domprefixes) with the following options:
+  - CSS 2D Transforms
+  - CSS 3D Transforms
+  - Modernizr.prefixed()
