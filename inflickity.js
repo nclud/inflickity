@@ -1,5 +1,6 @@
 /**
  * Inflickity - never-ending drag n' flick content
+ * https://github.com/nclud/inflickity
  * requires Modernizr 2.5 and requestAnimationFrame polyfill
  */
 
@@ -22,7 +23,6 @@ function getNow() {
   return ( new Date() ).getTime();
 }
 
-// hello
 function Inflickity( elem, options ) {
   
   this.element = elem;
@@ -62,11 +62,10 @@ function Inflickity( elem, options ) {
   if ( this.offsetAngle ) {
     this.element.style[ transformProp ] = 'rotate(' +this.offsetAngle + 'rad)';
   }
-  
+
   // keep track of mouse moves, mouse touches, etc
   this.contactPoints = [];
-  // this.cloneContents();
-  
+
 }
 
 Inflickity.defaults = {
@@ -253,7 +252,8 @@ Inflickity.prototype.cursorEnd = function( cursor, event ) {
   delete this.cursorIdentifier;
 
   // if not dragging, click event fired
-  if ( !this.isDragging && !this.wasScrollingBeforeCursorStart && typeof this.options.onClick === 'function' ) {
+  if ( !this.isDragging && !this.wasScrollingBeforeCursorStart &&
+  typeof this.options.onClick === 'function' ) {
     this.options.onClick.call( this, event, cursor );
   }
 
