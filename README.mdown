@@ -30,3 +30,13 @@ var myFlickity = new Inflickity( elem, {
   - CSS 2D Transforms
   - CSS 3D Transforms
   - Modernizr.prefixed()
+
+## Clone from GitHub
+
+Don't forget to update/init submodules to get the [requestAnimationFrame polyfill](https://gist.github.com/1866474)
+
+``` bash
+git clone https://github.com/nclud/inflickity.git
+cd inflickity
+git submodule update --init
+```

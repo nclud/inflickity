@@ -1,0 +1,3 @@
+[submodule "request-animation-frame"]
+	path = request-animation-frame
+	url = git://gist.github.com/1866474.git
